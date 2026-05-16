@@ -6,16 +6,9 @@ class Config:
     DATABASE_URL = os.environ.get("DATABASE_URL")
 
     if DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
-
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "connect_args": {
-                "ssl": {"ssl-mode": "REQUIRED"}
-            }
-        }
+        # SOLO esto, nada más
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"
-        SQLALCHEMY_ENGINE_OPTIONS = {}
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
