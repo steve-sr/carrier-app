@@ -5,7 +5,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
 
-
+# -------------------------
+# MIXIN
+# -------------------------
 class TimestampMixin:
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(
@@ -16,6 +18,27 @@ class TimestampMixin:
     )
 
 
+# -------------------------
+# USERS (LOGIN SYSTEM)
+# -------------------------
+class User(UserMixin, db.Model, TimestampMixin):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), default="ADMIN")  # ROOT / ADMIN
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+# -------------------------
+# CUSTOMERS
+# -------------------------
 class Customer(db.Model, TimestampMixin):
     __tablename__ = "customers"
 
@@ -28,6 +51,9 @@ class Customer(db.Model, TimestampMixin):
     orders = db.relationship("Order", backref="customer", lazy=True)
 
 
+# -------------------------
+# PRODUCTS
+# -------------------------
 class Product(db.Model, TimestampMixin):
     __tablename__ = "products"
 
@@ -53,6 +79,9 @@ class Product(db.Model, TimestampMixin):
         return sum(v.available_quantity() for v in self.variants)
 
 
+# -------------------------
+# VARIANTS
+# -------------------------
 class ProductVariant(db.Model, TimestampMixin):
     __tablename__ = "product_variants"
 
@@ -71,6 +100,9 @@ class ProductVariant(db.Model, TimestampMixin):
         return self.stock_quantity
 
 
+# -------------------------
+# ORDERS
+# -------------------------
 class Order(db.Model, TimestampMixin):
     __tablename__ = "orders"
 
@@ -111,18 +143,13 @@ class Order(db.Model, TimestampMixin):
     def recalculate_totals(self):
         subtotal = sum(item.unit_price * item.quantity for item in self.items)
 
-        self.subtotal = subtotal
+        self.subtotal = subtotal if subtotal > 0 else 0
 
-        if self.subtotal < 0:
-            self.subtotal = 0
-
-        # saldo
         self.balance_due = self.subtotal - self.total_paid
 
         if self.balance_due < 0:
             self.balance_due = 0
 
-        # estado de pago
         if self.total_paid >= self.subtotal:
             self.payment_status = "PAID"
         elif self.total_paid > 0:
@@ -130,6 +157,10 @@ class Order(db.Model, TimestampMixin):
         else:
             self.payment_status = "UNPAID"
 
+
+# -------------------------
+# ORDER ITEMS
+# -------------------------
 class OrderItem(db.Model, TimestampMixin):
     __tablename__ = "order_items"
 
@@ -145,6 +176,9 @@ class OrderItem(db.Model, TimestampMixin):
     item_status = db.Column(db.String(20), nullable=False, default="RESERVED")
 
 
+# -------------------------
+# PAYMENTS
+# -------------------------
 class Payment(db.Model, TimestampMixin):
     __tablename__ = "payments"
 
@@ -153,17 +187,3 @@ class Payment(db.Model, TimestampMixin):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     payment_method = db.Column(db.String(30), nullable=False, default="CASH")
     notes = db.Column(db.Text, nullable=True)
-
-class User(UserMixin, db.Model):
-    __tablename__ = "users"
-
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="ADMIN")
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
