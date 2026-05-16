@@ -1,18 +1,8 @@
-from decimal import Decimal, InvalidOperation
-from io import BytesIO
-import os
-import uuid
-
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
-from reportlab.pdfgen import canvas
-from sqlalchemy import or_
-from werkzeug.utils import secure_filename
-
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import LoginManager, login_user, login_required, logout_user
 from config import Config
 from extensions import db, migrate
-from models import Customer, Product, ProductVariant, Order, OrderItem, Payment, User
+from models import Customer, Product, Order, User
 
 
 def create_app():
@@ -22,9 +12,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # -------------------------
-    # LOGIN CONFIG
-    # -------------------------
+    # LOGIN
     login_manager = LoginManager()
     login_manager.login_view = "login"
     login_manager.init_app(app)
@@ -58,11 +46,22 @@ def create_app():
     def logout():
         logout_user()
         return redirect(url_for("login"))
-    
+
+    # -------------------------
+    # TEST
+    # -------------------------
     @app.route("/test")
     def test():
         return "OK"
-    
+
+    # -------------------------
+    # DASHBOARD
+    # -------------------------
+    @app.route("/")
+    @login_required
+    def dashboard():
+        return render_template("dashboard.html")
+
     # -------------------------
     # PRODUCTS
     # -------------------------
@@ -72,7 +71,6 @@ def create_app():
         products = Product.query.all()
         return render_template("products/list.html", products=products)
 
-
     # -------------------------
     # ORDERS
     # -------------------------
@@ -81,7 +79,6 @@ def create_app():
     def order_list():
         orders = Order.query.all()
         return render_template("orders/list.html", orders=orders)
-
 
     # -------------------------
     # CUSTOMERS
@@ -93,27 +90,16 @@ def create_app():
         return render_template("customers/list.html", customers=customers)
 
     # -------------------------
-    # DASHBOARD
-    # -------------------------
-    @app.route("/")
-    @login_required
-    def dashboard():
-        return render_template("dashboard.html")
-
-    # -------------------------
-    # CREATE ROOT (🔥 FIX)
+    # CLI ROOT
     # -------------------------
     @app.cli.command("create-root")
     def create_root():
-        username = "root"
-        password = "123456"
-
-        if User.query.filter_by(username=username).first():
+        if User.query.filter_by(username="root").first():
             print("Root ya existe")
             return
 
-        user = User(username=username, role="ROOT")
-        user.set_password(password)
+        user = User(username="root", role="ROOT")
+        user.set_password("123456")
 
         db.session.add(user)
         db.session.commit()
