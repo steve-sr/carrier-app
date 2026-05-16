@@ -62,6 +62,35 @@ def create_app():
     @app.route("/test")
     def test():
         return "OK"
+    
+    # -------------------------
+    # PRODUCTS
+    # -------------------------
+    @app.route("/products")
+    @login_required
+    def product_list():
+        products = Product.query.all()
+        return render_template("products/list.html", products=products)
+
+
+    # -------------------------
+    # ORDERS
+    # -------------------------
+    @app.route("/orders")
+    @login_required
+    def order_list():
+        orders = Order.query.all()
+        return render_template("orders/list.html", orders=orders)
+
+
+    # -------------------------
+    # CUSTOMERS
+    # -------------------------
+    @app.route("/customers")
+    @login_required
+    def customer_list():
+        customers = Customer.query.all()
+        return render_template("customers/list.html", customers=customers)
 
     # -------------------------
     # DASHBOARD
