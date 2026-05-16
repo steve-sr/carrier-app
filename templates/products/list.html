@@ -2,65 +2,103 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1 class="page-title">Products</h1>
-    <div class="page-subtitle">Manage products, prices, stock, and images.</div>
+    <h1 class="page-title">Orders</h1>
+    <div class="page-subtitle">Pedidos pendientes, pagados, completados y cancelados.</div>
   </div>
-  <a class="btn" href="{{ url_for('product_create') }}">Add Product</a>
+  <a class="btn" href="{{ url_for('order_create') }}">New Order</a>
+</div>
+
+<div class="card">
+  <form method="GET">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Buscar</label>
+        <input type="text" name="search" value="{{ current_search }}" placeholder="Cliente o teléfono">
+      </div>
+
+      <div class="form-group">
+        <label>Estado orden</label>
+        <select name="order_status">
+          <option value="">Todos</option>
+          <option value="PENDING" {% if current_order_status == 'PENDING' %}selected{% endif %}>PENDING</option>
+          <option value="COMPLETED" {% if current_order_status == 'COMPLETED' %}selected{% endif %}>COMPLETED</option>
+          <option value="CANCELLED" {% if current_order_status == 'CANCELLED' %}selected{% endif %}>CANCELLED</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Estado pago</label>
+        <select name="payment_status">
+          <option value="">Todos</option>
+          <option value="UNPAID" {% if current_payment_status == 'UNPAID' %}selected{% endif %}>UNPAID</option>
+          <option value="PARTIAL" {% if current_payment_status == 'PARTIAL' %}selected{% endif %}>PARTIAL</option>
+          <option value="PAID" {% if current_payment_status == 'PAID' %}selected{% endif %}>PAID</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" type="submit">Filtrar</button>
+      </div>
+    </div>
+  </form>
 </div>
 
 <div class="card table-wrap">
   <table>
     <thead>
       <tr>
-        <th>Image</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Total Stock</th>
-        <th>Available</th>
-        <th>Actions</th>
+        <th>ID</th>
+        <th>Cliente</th>
+        <th>Orden</th>
+        <th>Pago</th>
+        <th>Total</th>
+        <th>Pagado</th>
+        <th>Saldo</th>
+        <th>Acciones</th>
       </tr>
     </thead>
+
     <tbody>
-      {% for product in products %}
+      {% for order in orders %}
       <tr>
+        <td>#{{ order.id }}</td>
         <td>
-          {% if product.image_filename %}
-            <img
-              src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
-              style="width:60px; height:60px; object-fit:cover; border-radius:12px;"
-            >
-          {% else %}
-            <div style="width:60px; height:60px; background:#f3f4f6; border-radius:12px;"></div>
-          {% endif %}
+          <strong>{{ order.customer.full_name }}</strong>
+          <div class="muted">{{ order.customer.phone }}</div>
         </td>
 
-        <td><strong>{{ product.name }}</strong></td>
-        <td>₡{{ product.base_price }}</td>
-
-        
-        <td>{{ product.total_stock }}</td>
         <td>
-          {% if product.available_stock == 0 %}
-            <span class="badge badge-danger">0</span>
-          {% elif product.available_stock <= 3 %}
-            <span class="badge badge-warning">{{ product.available_stock }}</span>
+          {% if order.order_status == 'COMPLETED' %}
+            <span class="badge badge-success">{{ order.order_status }}</span>
+          {% elif order.order_status == 'CANCELLED' %}
+            <span class="badge badge-danger">{{ order.order_status }}</span>
           {% else %}
-            <span class="badge badge-success">{{ product.available_stock }}</span>
+            <span class="badge badge-warning">{{ order.order_status }}</span>
           {% endif %}
         </td>
 
         <td>
-          <div class="actions">
-            <a class="btn btn-secondary" href="{{ url_for('product_edit', product_id=product.id) }}">Edit</a>
-            <form action="{{ url_for('product_delete', product_id=product.id) }}" method="POST" style="display:inline;">
-              <button class="btn btn-danger" type="submit">Delete</button>
-            </form>
-          </div>
+          {% if order.payment_status == 'PAID' %}
+            <span class="badge badge-success">{{ order.payment_status }}</span>
+          {% elif order.payment_status == 'PARTIAL' %}
+            <span class="badge badge-warning">{{ order.payment_status }}</span>
+          {% else %}
+            <span class="badge badge-neutral">{{ order.payment_status }}</span>
+          {% endif %}
+        </td>
+
+        <td>{{ order.subtotal|money }}</td>
+        <td>{{ order.total_paid|money }}</td>
+        <td>{{ order.balance_due|money }}</td>
+
+        <td>
+          <a class="btn btn-secondary" href="{{ url_for('order_detail', order_id=order.id) }}">View</a>
         </td>
       </tr>
       {% else %}
       <tr>
-        <td colspan="6" class="muted">No products added yet.</td>
+        <td colspan="8" class="muted">No hay órdenes registradas.</td>
       </tr>
       {% endfor %}
     </tbody>

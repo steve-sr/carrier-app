@@ -3,104 +3,128 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">New Order</h1>
-    <div class="page-subtitle">Register a customer order with payment and delivery details.</div>
+    <div class="page-subtitle">Creá un pedido con varias camisas, descuentos y pago inicial.</div>
   </div>
 </div>
 
 <div class="grid grid-2">
   <div class="card">
-    <form method="POST">
-
-      <!-- CUSTOMER -->
+    <form method="POST" id="orderForm">
       <div class="form-group">
-        <label>Customer</label>
+        <label>Cliente</label>
         <select name="customer_id" required>
-          <option value="">Select customer</option>
+          <option value="">Seleccionar cliente</option>
           {% for customer in customers %}
             <option value="{{ customer.id }}">{{ customer.full_name }} - {{ customer.phone }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <!-- PRODUCTS MULTI -->
-      <div class="form-group">
-        <label>Products</label>
+      <h3>Productos</h3>
 
-        <div id="items-container">
+      <div id="items-container">
+        <div class="order-line">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Producto / Talla</label>
+              <select name="variant_id[]" class="variant-select" required>
+                <option value="">Seleccionar producto</option>
+                {% for variant in variants %}
+                  <option
+                    value="{{ variant.id }}"
+                    data-price="{{ variant.product.base_price }}"
+                  >
+                    {{ variant.product.name }} / {{ variant.size }} / Disponible: {{ variant.available_quantity() }} / {{ variant.product.base_price|money }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
 
-          <div class="order-item" style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
+            <div class="form-group">
+              <label>Cantidad</label>
+              <input type="number" name="quantity[]" class="quantity-input" min="1" value="1">
+            </div>
 
-            <select name="variant_id[]" required style="flex:1;">
-              <option value="">Select product</option>
-              {% for variant in variants %}
-                <option value="{{ variant.id }}">
-                  {{ variant.product.name }} / {{ variant.size }} ({{ variant.available_quantity() }})
-                </option>
-              {% endfor %}
-            </select>
-
-            <input type="number" name="quantity[]" value="1" min="1" style="width:70px;">
-
-            <input type="number" name="discount_percentage[]" placeholder="%" style="width:60px;">
-
-            <input type="number" name="discount_amount[]" placeholder="₡" style="width:80px;">
-
-            <button type="button" onclick="removeItem(this)">✕</button>
-
+            <div class="form-group">
+              <label>Descuento por unidad</label>
+              <input type="number" step="0.01" name="discount_amount[]" class="discount-input" value="0">
+            </div>
           </div>
 
+          <button type="button" class="btn btn-secondary" onclick="removeItem(this)">Quitar</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-secondary" onclick="addItem()">+ Agregar producto</button>
+
+      <div class="summary-box" style="margin-top:20px;">
+        <p><strong>Total estimado:</strong> <span id="live-total">₡0.00</span></p>
+        <p><strong>Pago inicial estimado:</strong> <span id="live-payment">₡0.00</span></p>
+      </div>
+
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:20px 0;">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo de pago</label>
+          <select name="payment_type" id="payment_type" required>
+            <option value="PARTIAL">50% apartado</option>
+            <option value="FULL">Pago completo</option>
+            <option value="NONE">Sin pago inicial</option>
+          </select>
         </div>
 
-        <button type="button" class="btn btn-secondary" onclick="addItem()">+ Add Product</button>
-      </div>
+        <div class="form-group">
+          <label>Método de pago</label>
+          <select name="payment_method">
+            <option value="CASH">CASH</option>
+            <option value="SINPE">SINPE</option>
+            <option value="TRANSFER">TRANSFER</option>
+          </select>
+        </div>
 
-      <!-- PAYMENT -->
-      <div class="form-group">
-        <label>Payment Type</label>
-        <select name="payment_type" required>
-          <option value="PARTIAL">50% Deposit</option>
-          <option value="FULL">Full Payment</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label>Entrega</label>
+          <select name="fulfillment_method" required>
+            <option value="PICKUP">Retiro</option>
+            <option value="SHIPPING">Envío</option>
+          </select>
+        </div>
 
-      <!-- DELIVERY -->
-      <div class="form-group">
-        <label>Fulfillment Method</label>
-        <select name="fulfillment_method" required>
-          <option value="PICKUP">Pickup</option>
-          <option value="SHIPPING">Shipping</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label>Lugar de retiro</label>
+          <input type="text" name="pickup_location">
+        </div>
 
-      <div class="form-group">
-        <label>Shipping Address</label>
-        <textarea name="shipping_address"></textarea>
-      </div>
+        <div class="form-group full">
+          <label>Dirección de envío</label>
+          <textarea name="shipping_address"></textarea>
+        </div>
 
-      <div class="form-group">
-        <label>Pickup Location</label>
-        <input type="text" name="pickup_location">
+        <div class="form-group full">
+          <label>Notas</label>
+          <textarea name="notes"></textarea>
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn" type="submit">Create Order</button>
+        <button class="btn" type="submit">Crear orden</button>
       </div>
-
     </form>
   </div>
 
-  <!-- QUICK CUSTOMER -->
   <div class="card">
-    <h2 style="margin-top:0;">Quick Customer Create</h2>
+    <h2 style="margin-top:0;">Crear cliente rápido</h2>
+    <p class="muted">Agregá un cliente sin salir de esta pantalla.</p>
 
-    <form method="POST" action="{{ url_for('customer_create') }}">
+    <form method="POST" action="{{ url_for('customer_quick_create') }}">
       <div class="form-group">
-        <label>Full Name</label>
+        <label>Nombre completo</label>
         <input type="text" name="full_name" required>
       </div>
 
       <div class="form-group">
-        <label>Phone</label>
+        <label>Teléfono</label>
         <input type="text" name="phone" required>
       </div>
 
@@ -110,35 +134,95 @@
       </div>
 
       <div class="form-group">
-        <label>Notes</label>
+        <label>Notas</label>
         <textarea name="notes"></textarea>
       </div>
 
-      <button class="btn btn-secondary">Add Customer</button>
+      <button class="btn btn-secondary" type="submit">Agregar cliente</button>
     </form>
   </div>
 </div>
 
-<!-- SCRIPT -->
 <script>
+function formatMoney(value) {
+  return "₡" + Number(value || 0).toLocaleString("es-CR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function calculateLiveTotal() {
+  let total = 0;
+
+  document.querySelectorAll(".order-line").forEach(line => {
+    const select = line.querySelector(".variant-select");
+    const qtyInput = line.querySelector(".quantity-input");
+    const discountInput = line.querySelector(".discount-input");
+
+    const selected = select.options[select.selectedIndex];
+    const price = Number(selected?.dataset?.price || 0);
+    const qty = Number(qtyInput.value || 1);
+    const discount = Number(discountInput.value || 0);
+
+    let finalPrice = price - discount;
+    if (finalPrice < 0) finalPrice = 0;
+
+    total += finalPrice * qty;
+  });
+
+  const paymentType = document.getElementById("payment_type").value;
+
+  let payment = 0;
+
+  if (paymentType === "FULL") payment = total;
+  else if (paymentType === "PARTIAL") payment = total * 0.5;
+  else payment = 0;
+
+  document.getElementById("live-total").textContent = formatMoney(total);
+  document.getElementById("live-payment").textContent = formatMoney(payment);
+}
+
 function addItem() {
   const container = document.getElementById("items-container");
-  const item = container.children[0].cloneNode(true);
+  const first = container.querySelector(".order-line");
+  const clone = first.cloneNode(true);
 
-  item.querySelectorAll("input").forEach(input => input.value = "");
-  item.querySelector("input[name='quantity[]']").value = 1;
-  item.querySelector("select").value = "";
+  clone.querySelectorAll("input").forEach(input => {
+    if (input.classList.contains("quantity-input")) input.value = 1;
+    else input.value = 0;
+  });
 
-  container.appendChild(item);
+  clone.querySelectorAll("select").forEach(select => {
+    select.selectedIndex = 0;
+  });
+
+  container.appendChild(clone);
+  bindLiveInputs();
+  calculateLiveTotal();
 }
 
-function removeItem(btn) {
-  const container = document.getElementById("items-container");
+function removeItem(button) {
+  const lines = document.querySelectorAll(".order-line");
 
-  if (container.children.length > 1) {
-    btn.parentElement.remove();
+  if (lines.length <= 1) {
+    alert("La orden debe tener al menos un producto.");
+    return;
   }
-}
-</script>
 
+  button.closest(".order-line").remove();
+  calculateLiveTotal();
+}
+
+function bindLiveInputs() {
+  document.querySelectorAll(".variant-select, .quantity-input, .discount-input, #payment_type").forEach(el => {
+    el.removeEventListener("input", calculateLiveTotal);
+    el.removeEventListener("change", calculateLiveTotal);
+    el.addEventListener("input", calculateLiveTotal);
+    el.addEventListener("change", calculateLiveTotal);
+  });
+}
+
+bindLiveInputs();
+calculateLiveTotal();
+</script>
 {% endblock %}

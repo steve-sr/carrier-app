@@ -1,31 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-
 <div class="page-header">
   <div>
     <h1 class="page-title">Order #{{ order.id }}</h1>
-    <div class="page-subtitle">Review order, payment, delivery, and item information.</div>
+    <div class="page-subtitle">Detalle del pedido, pagos, entrega y productos.</div>
   </div>
 </div>
 
 <div class="grid grid-2">
-
-  <!-- CUSTOMER -->
   <div class="card">
-    <h3 style="margin-top:0;">Customer</h3>
-    <p><strong>Name:</strong> {{ order.customer.full_name }}</p>
-    <p><strong>Phone:</strong> {{ order.customer.phone }}</p>
+    <h3 style="margin-top:0;">Cliente</h3>
+    <p><strong>Nombre:</strong> {{ order.customer.full_name }}</p>
+    <p><strong>Teléfono:</strong> {{ order.customer.phone }}</p>
     {% if order.customer.email %}
       <p><strong>Email:</strong> {{ order.customer.email }}</p>
     {% endif %}
   </div>
 
-  <!-- ORDER SUMMARY -->
   <div class="card">
-    <h3 style="margin-top:0;">Order Summary</h3>
+    <h3 style="margin-top:0;">Resumen</h3>
 
     <p>
-      <strong>Order Status:</strong>
+      <strong>Estado orden:</strong>
       {% if order.order_status == 'COMPLETED' %}
         <span class="badge badge-success">{{ order.order_status }}</span>
       {% elif order.order_status == 'CANCELLED' %}
@@ -36,7 +32,7 @@
     </p>
 
     <p>
-      <strong>Payment Status:</strong>
+      <strong>Estado pago:</strong>
       {% if order.payment_status == 'PAID' %}
         <span class="badge badge-success">{{ order.payment_status }}</span>
       {% elif order.payment_status == 'PARTIAL' %}
@@ -46,126 +42,172 @@
       {% endif %}
     </p>
 
-    <p><strong>Fulfillment Method:</strong> {{ order.fulfillment_method }}</p>
-    <p><strong>Fulfillment Status:</strong> {{ order.fulfillment_status }}</p>
+    <p><strong>Entrega:</strong> {{ order.fulfillment_method }}</p>
+    <p><strong>Estado entrega:</strong> {{ order.fulfillment_status }}</p>
 
     {% if order.shipping_address %}
-      <p><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+      <p><strong>Dirección:</strong> {{ order.shipping_address }}</p>
     {% endif %}
 
     {% if order.pickup_location %}
-      <p><strong>Pickup Location:</strong> {{ order.pickup_location }}</p>
+      <p><strong>Retiro:</strong> {{ order.pickup_location }}</p>
+    {% endif %}
+
+    {% if order.notes %}
+      <p><strong>Notas:</strong> {{ order.notes }}</p>
     {% endif %}
 
     <hr style="border:none; border-top:1px solid #e5e7eb; margin:16px 0;">
 
-    <!-- CALCULO DESCUENTOS -->
     {% set total_original = 0 %}
-    {% set total_final = 0 %}
+    {% set total_discount = 0 %}
 
     {% for item in order.items %}
-      {% set total_original = total_original + ((item.unit_price + (item.discount_amount or 0)) * item.quantity) %}
-      {% set total_final = total_final + (item.unit_price * item.quantity) %}
+      {% set total_original = total_original + item.line_original_total %}
+      {% set total_discount = total_discount + item.line_discount_total %}
     {% endfor %}
 
-    {% set total_discount = total_original - total_final %}
-
     {% if total_discount > 0 %}
-      <p><strong>Subtotal original:</strong> ₡{{ total_original }}</p>
-      <p><strong>Descuento:</strong> -₡{{ total_discount }}</p>
+      <p><strong>Subtotal original:</strong> {{ total_original|money }}</p>
+      <p><strong>Descuento:</strong> -{{ total_discount|money }}</p>
     {% endif %}
 
-    <p><strong>Total:</strong> ₡{{ order.subtotal }}</p>
-    <p><strong>Pagado:</strong> ₡{{ order.total_paid }}</p>
-    <p><strong>Saldo pendiente:</strong> ₡{{ order.balance_due }}</p>
-
+    <p><strong>Total:</strong> {{ order.subtotal|money }}</p>
+    <p><strong>Pagado:</strong> {{ order.total_paid|money }}</p>
+    <p><strong>Saldo pendiente:</strong> {{ order.balance_due|money }}</p>
   </div>
 </div>
 
-<!-- ACTIONS -->
 <div class="card">
   <div class="actions">
-    <a class="btn btn-secondary" href="{{ url_for('order_edit', order_id=order.id) }}">Edit Order</a>
-    <a class="btn btn-secondary" href="{{ url_for('order_pdf', order_id=order.id) }}">Download PDF</a>
+    <a class="btn btn-secondary" href="{{ url_for('order_edit', order_id=order.id) }}">Editar orden</a>
+    <a class="btn btn-secondary" href="{{ url_for('order_pdf', order_id=order.id) }}">Descargar PDF</a>
 
     {% if order.order_status != 'COMPLETED' and order.order_status != 'CANCELLED' %}
-      <form method="POST" action="{{ url_for('order_mark_completed', order_id=order.id) }}" style="display:inline;">
-        <button class="btn" type="submit">Mark Completed</button>
+      <form method="POST" action="{{ url_for('order_mark_completed', order_id=order.id) }}">
+        <button class="btn" type="submit">Marcar completada</button>
       </form>
     {% endif %}
 
     {% if order.order_status != 'CANCELLED' %}
-      <form method="POST" action="{{ url_for('order_cancel', order_id=order.id) }}" style="display:inline;">
-        <button class="btn btn-warning" type="submit">Cancel Order</button>
+      <form method="POST" action="{{ url_for('order_cancel', order_id=order.id) }}" onsubmit="return confirm('¿Seguro que querés cancelar esta orden?');">
+        <button class="btn btn-warning" type="submit">Cancelar orden</button>
       </form>
     {% endif %}
   </div>
 </div>
 
-<!-- ITEMS -->
 <div class="card">
-  <h3 style="margin-top:0;">Items</h3>
+  <h3 style="margin-top:0;">Productos</h3>
 
   <div style="display:grid; gap:18px;">
     {% for item in order.items %}
-      <div style="display:grid; grid-template-columns:120px 1fr; gap:18px; border:1px solid #e5e7eb; border-radius:16px; padding:16px;">
-
+      <div class="item-card">
         <div>
           {% if item.variant.product.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/products/' + item.variant.product.image_filename) }}"
-                 style="width:120px; height:120px; object-fit:cover; border-radius:12px;">
+            <img
+              class="item-image"
+              src="{{ url_for('static', filename='uploads/products/' + item.variant.product.image_filename) }}"
+              alt="{{ item.variant.product.name }}"
+            >
           {% else %}
-            <div style="width:120px; height:120px; background:#eee; border-radius:12px;"></div>
+            <div class="item-image"></div>
           {% endif %}
         </div>
 
         <div>
-          <div style="font-weight:700; font-size:18px;">{{ item.variant.product.name }}</div>
+          <div style="font-size:18px; font-weight:800; margin-bottom:8px;">{{ item.variant.product.name }}</div>
 
-          <p><strong>Size:</strong> {{ item.variant.size }}</p>
-          <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+          <p><strong>Talla:</strong> {{ item.variant.size }}</p>
+          <p><strong>Cantidad:</strong> {{ item.quantity }}</p>
 
           {% if item.discount_amount and item.discount_amount > 0 %}
-            <p><strong>Original:</strong> ₡{{ item.unit_price + item.discount_amount }}</p>
-            <p><strong>Descuento:</strong> -₡{{ item.discount_amount }}</p>
+            <p><strong>Original unidad:</strong> {{ item.original_unit_price|money }}</p>
+            <p><strong>Descuento unidad:</strong> -{{ item.discount_amount|money }}</p>
           {% endif %}
 
-          <p><strong>Precio final:</strong> ₡{{ item.unit_price }}</p>
+          <p><strong>Precio final unidad:</strong> {{ item.unit_price|money }}</p>
+          <p><strong>Total línea:</strong> {{ item.line_total|money }}</p>
 
           <p>
-            <strong>Status:</strong>
+            <strong>Estado:</strong>
             {% if item.item_status == 'DELIVERED' %}
               <span class="badge badge-success">{{ item.item_status }}</span>
             {% elif item.item_status == 'CANCELLED' %}
               <span class="badge badge-danger">{{ item.item_status }}</span>
+            {% elif item.item_status == 'PAID' %}
+              <span class="badge badge-success">{{ item.item_status }}</span>
             {% else %}
               <span class="badge badge-warning">{{ item.item_status }}</span>
             {% endif %}
           </p>
         </div>
-
       </div>
     {% endfor %}
   </div>
 </div>
 
-<!-- PAYMENTS -->
 {% if order.order_status != 'CANCELLED' and order.payment_status != 'PAID' %}
 <div class="card">
-  <h3>Register Payment</h3>
+  <h3 style="margin-top:0;">Registrar pago</h3>
+  <p class="muted">Saldo pendiente actual: <strong>{{ order.balance_due|money }}</strong></p>
 
   <form method="POST" action="{{ url_for('order_add_payment', order_id=order.id) }}">
-    <input type="number" step="0.01" name="amount" required>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Monto</label>
+        <input type="number" step="0.01" name="amount" max="{{ order.balance_due }}" required>
+      </div>
 
-    <select name="payment_method">
-      <option value="CASH">CASH</option>
-      <option value="SINPE">SINPE</option>
-      <option value="TRANSFER">TRANSFER</option>
-    </select>
+      <div class="form-group">
+        <label>Método</label>
+        <select name="payment_method">
+          <option value="CASH">CASH</option>
+          <option value="SINPE">SINPE</option>
+          <option value="TRANSFER">TRANSFER</option>
+        </select>
+      </div>
 
-    <button class="btn" type="submit">Add Payment</button>
+      <div class="form-group full">
+        <label>Notas</label>
+        <input type="text" name="notes" placeholder="Nota opcional">
+      </div>
+    </div>
+
+    <button class="btn" type="submit">Agregar pago</button>
   </form>
 </div>
 {% endif %}
 
+<div class="card">
+  <h3 style="margin-top:0;">Historial de pagos</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Monto</th>
+          <th>Método</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for payment in order.payments %}
+        <tr>
+          <td>{{ payment.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td>{{ payment.amount|money }}</td>
+          <td>{{ payment.payment_method }}</td>
+          <td>{{ payment.notes or "-" }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="muted">No hay pagos registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

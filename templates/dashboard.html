@@ -3,87 +3,80 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Dashboard</h1>
-    <div class="page-subtitle">A simple overview of your store, orders, and cash flow.</div>
+    <div class="page-subtitle">Resumen general de Carrier.</div>
   </div>
+  <a class="btn" href="{{ url_for('order_create') }}">New Order</a>
 </div>
 
 <div class="grid grid-4">
   <div class="card">
-    <div class="stat-label">Total Products</div>
+    <div class="stat-label">Productos</div>
     <div class="stat-value">{{ total_products }}</div>
   </div>
 
   <div class="card">
-    <div class="stat-label">Total Customers</div>
+    <div class="stat-label">Clientes</div>
     <div class="stat-value">{{ total_customers }}</div>
   </div>
 
   <div class="card">
-    <div class="stat-label">Pending Orders</div>
+    <div class="stat-label">Órdenes pendientes</div>
     <div class="stat-value">{{ pending_orders }}</div>
   </div>
 
   <div class="card">
-    <div class="stat-label">Completed Orders</div>
+    <div class="stat-label">Órdenes completadas</div>
     <div class="stat-value">{{ completed_orders }}</div>
   </div>
 </div>
 
-<div class="grid grid-4">
+<div class="grid grid-3">
   <div class="card">
-    <div class="stat-label">Total Sales</div>
-    <div class="stat-value">₡{{ "{:,.0f}".format(total_revenue) }}</div>
+    <div class="stat-label">Ventas totales</div>
+    <div class="stat-value">{{ total_revenue|money }}</div>
   </div>
 
   <div class="card">
-    <div class="stat-label">Collected</div>
-    <div class="stat-value">₡{{ "{:,.0f}".format(total_collected) }}</div>
+    <div class="stat-label">Cobrado</div>
+    <div class="stat-value">{{ total_collected|money }}</div>
   </div>
 
   <div class="card">
-    <div class="stat-label">Pending Balance</div>
-    <div class="stat-value">₡{{ "{:,.0f}".format(total_pending_balance) }}</div>
-  </div>
-
-  <div class="card">
-    <div class="stat-label">Cancelled Orders</div>
-    <div class="stat-value">{{ cancelled_orders }}</div>
+    <div class="stat-label">Saldo pendiente</div>
+    <div class="stat-value">{{ total_pending_balance|money }}</div>
   </div>
 </div>
 
 <div class="card">
-  <div class="page-header" style="margin-bottom:16px;">
-    <div>
-      <h2 style="margin:0;">Low Stock</h2>
-      <div class="page-subtitle">Variants with 3 units or less available.</div>
-    </div>
-  </div>
+  <h3 style="margin-top:0;">Stock bajo</h3>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Product</th>
-          <th>Size</th>
-          <th>Available Stock</th>
+          <th>Producto</th>
+          <th>Talla</th>
+          <th>Stock</th>
         </tr>
       </thead>
       <tbody>
         {% for variant in low_stock_variants %}
         <tr>
-          <td><strong>{{ variant.product.name }}</strong></td>
+          <td>{{ variant.product.name }}</td>
           <td>{{ variant.size }}</td>
           <td>
-            {% if variant.stock_quantity <= 1 %}
-              <span class="badge badge-danger">{{ variant.stock_quantity }}</span>
-            {% else %}
+            {% if variant.stock_quantity == 0 %}
+              <span class="badge badge-danger">0</span>
+            {% elif variant.stock_quantity <= 3 %}
               <span class="badge badge-warning">{{ variant.stock_quantity }}</span>
+            {% else %}
+              <span class="badge badge-success">{{ variant.stock_quantity }}</span>
             {% endif %}
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="3" class="muted">No low stock products right now.</td>
+          <td colspan="3" class="muted">No hay productos con stock bajo.</td>
         </tr>
         {% endfor %}
       </tbody>

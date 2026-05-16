@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Customers</h1>
+    <div class="page-subtitle">Administrá clientes registrados.</div>
+  </div>
+  <a class="btn" href="{{ url_for('customer_create') }}">Add Customer</a>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Notas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+      <tr>
+        <td><strong>{{ customer.full_name }}</strong></td>
+        <td>{{ customer.phone }}</td>
+        <td>{{ customer.email or "-" }}</td>
+        <td>{{ customer.notes or "-" }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="muted">No hay clientes registrados.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

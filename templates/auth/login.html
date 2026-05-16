@@ -1,8 +1,21 @@
-<form method="POST">
-  <h2>Login</h2>
+{% extends "base.html" %}
+{% block content %}
+<div class="card auth-card">
+  <h1 class="page-title">Carrier</h1>
+  <p class="page-subtitle">Iniciá sesión para administrar ventas, inventario y pedidos.</p>
 
-  <input type="text" name="username" placeholder="Usuario" required>
-  <input type="password" name="password" placeholder="Contraseña" required>
+  <form method="POST" style="margin-top:22px;">
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" name="username" required autofocus>
+    </div>
 
-  <button type="submit">Entrar</button>
-</form>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" name="password" required>
+    </div>
+
+    <button class="btn" type="submit" style="width:100%;">Entrar</button>
+  </form>
+</div>
+{% endblock %}

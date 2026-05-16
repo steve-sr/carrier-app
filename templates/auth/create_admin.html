@@ -1,8 +1,66 @@
-<form method="POST">
-  <h2>Crear Admin</h2>
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Users</h1>
+    <div class="page-subtitle">Crear usuarios administradores para el sistema.</div>
+  </div>
+</div>
 
-  <input type="text" name="username" required>
-  <input type="password" name="password" required>
+<div class="grid grid-2">
+  <div class="card">
+    <h3 style="margin-top:0;">Crear usuario</h3>
 
-  <button type="submit">Crear</button>
-</form>
+    <form method="POST">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" name="username" required>
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" name="password" required>
+      </div>
+
+      <div class="form-group">
+        <label>Rol</label>
+        <select name="role">
+          <option value="ADMIN">ADMIN</option>
+          <option value="ROOT">ROOT</option>
+        </select>
+      </div>
+
+      <button class="btn" type="submit">Crear usuario</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Usuarios existentes</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td><strong>{{ user.username }}</strong></td>
+            <td>{{ user.role }}</td>
+            <td>{{ user.created_at.strftime("%Y-%m-%d") }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="muted">No hay usuarios.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
