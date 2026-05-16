@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Orders</h1>
+    <div class="page-subtitle">Track, search, and filter all registered orders.</div>
+  </div>
+  <a class="btn" href="{{ url_for('order_create') }}">New Order</a>
+</div>
+
+<div class="card">
+  <form method="GET">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Search customer</label>
+        <input
+          type="text"
+          name="search"
+          placeholder="Name or phone"
+          value="{{ current_search }}"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Order Status</label>
+        <select name="order_status">
+          <option value="">All</option>
+          <option value="PENDING" {% if current_order_status == 'PENDING' %}selected{% endif %}>PENDING</option>
+          <option value="COMPLETED" {% if current_order_status == 'COMPLETED' %}selected{% endif %}>COMPLETED</option>
+          <option value="CANCELLED" {% if current_order_status == 'CANCELLED' %}selected{% endif %}>CANCELLED</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Payment Status</label>
+        <select name="payment_status">
+          <option value="">All</option>
+          <option value="UNPAID" {% if current_payment_status == 'UNPAID' %}selected{% endif %}>UNPAID</option>
+          <option value="PARTIAL" {% if current_payment_status == 'PARTIAL' %}selected{% endif %}>PARTIAL</option>
+          <option value="PAID" {% if current_payment_status == 'PAID' %}selected{% endif %}>PAID</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Apply Filters</button>
+      <a class="btn btn-secondary" href="{{ url_for('order_list') }}">Clear</a>
+    </div>
+  </form>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Order Status</th>
+        <th>Payment</th>
+        <th>Total</th>
+        <th>Paid</th>
+        <th>Balance</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>#{{ order.id }}</td>
+        <td>
+          <strong>{{ order.customer.full_name }}</strong><br>
+          <span class="muted">{{ order.customer.phone }}</span>
+        </td>
+        <td>
+          {% if order.order_status == 'COMPLETED' %}
+            <span class="badge badge-success">{{ order.order_status }}</span>
+          {% elif order.order_status == 'CANCELLED' %}
+            <span class="badge badge-danger">{{ order.order_status }}</span>
+          {% else %}
+            <span class="badge badge-warning">{{ order.order_status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if order.payment_status == 'PAID' %}
+            <span class="badge badge-success">{{ order.payment_status }}</span>
+          {% elif order.payment_status == 'PARTIAL' %}
+            <span class="badge badge-warning">{{ order.payment_status }}</span>
+          {% else %}
+            <span class="badge badge-neutral">{{ order.payment_status }}</span>
+          {% endif %}
+        </td>
+        <td>₡{{ order.subtotal }}</td>
+        <td>₡{{ order.total_paid }}</td>
+        <td>₡{{ order.balance_due }}</td>
+        <td>
+          <a class="btn btn-secondary" href="{{ url_for('order_detail', order_id=order.id) }}">View</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8" class="muted">No orders found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

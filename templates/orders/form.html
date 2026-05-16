@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">New Order</h1>
+    <div class="page-subtitle">Register a customer order with payment and delivery details.</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <form method="POST">
+
+      <!-- CUSTOMER -->
+      <div class="form-group">
+        <label>Customer</label>
+        <select name="customer_id" required>
+          <option value="">Select customer</option>
+          {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.full_name }} - {{ customer.phone }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- PRODUCTS MULTI -->
+      <div class="form-group">
+        <label>Products</label>
+
+        <div id="items-container">
+
+          <div class="order-item" style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
+
+            <select name="variant_id[]" required style="flex:1;">
+              <option value="">Select product</option>
+              {% for variant in variants %}
+                <option value="{{ variant.id }}">
+                  {{ variant.product.name }} / {{ variant.size }} ({{ variant.available_quantity() }})
+                </option>
+              {% endfor %}
+            </select>
+
+            <input type="number" name="quantity[]" value="1" min="1" style="width:70px;">
+
+            <input type="number" name="discount_percentage[]" placeholder="%" style="width:60px;">
+
+            <input type="number" name="discount_amount[]" placeholder="₡" style="width:80px;">
+
+            <button type="button" onclick="removeItem(this)">✕</button>
+
+          </div>
+
+        </div>
+
+        <button type="button" class="btn btn-secondary" onclick="addItem()">+ Add Product</button>
+      </div>
+
+      <!-- PAYMENT -->
+      <div class="form-group">
+        <label>Payment Type</label>
+        <select name="payment_type" required>
+          <option value="PARTIAL">50% Deposit</option>
+          <option value="FULL">Full Payment</option>
+        </select>
+      </div>
+
+      <!-- DELIVERY -->
+      <div class="form-group">
+        <label>Fulfillment Method</label>
+        <select name="fulfillment_method" required>
+          <option value="PICKUP">Pickup</option>
+          <option value="SHIPPING">Shipping</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Shipping Address</label>
+        <textarea name="shipping_address"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Pickup Location</label>
+        <input type="text" name="pickup_location">
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit">Create Order</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- QUICK CUSTOMER -->
+  <div class="card">
+    <h2 style="margin-top:0;">Quick Customer Create</h2>
+
+    <form method="POST" action="{{ url_for('customer_create') }}">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="full_name" required>
+      </div>
+
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="text" name="phone" required>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email">
+      </div>
+
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea name="notes"></textarea>
+      </div>
+
+      <button class="btn btn-secondary">Add Customer</button>
+    </form>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+function addItem() {
+  const container = document.getElementById("items-container");
+  const item = container.children[0].cloneNode(true);
+
+  item.querySelectorAll("input").forEach(input => input.value = "");
+  item.querySelector("input[name='quantity[]']").value = 1;
+  item.querySelector("select").value = "";
+
+  container.appendChild(item);
+}
+
+function removeItem(btn) {
+  const container = document.getElementById("items-container");
+
+  if (container.children.length > 1) {
+    btn.parentElement.remove();
+  }
+}
+</script>
+
+{% endblock %}

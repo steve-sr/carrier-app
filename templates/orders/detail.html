@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Order #{{ order.id }}</h1>
+    <div class="page-subtitle">Review order, payment, delivery, and item information.</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+
+  <!-- CUSTOMER -->
+  <div class="card">
+    <h3 style="margin-top:0;">Customer</h3>
+    <p><strong>Name:</strong> {{ order.customer.full_name }}</p>
+    <p><strong>Phone:</strong> {{ order.customer.phone }}</p>
+    {% if order.customer.email %}
+      <p><strong>Email:</strong> {{ order.customer.email }}</p>
+    {% endif %}
+  </div>
+
+  <!-- ORDER SUMMARY -->
+  <div class="card">
+    <h3 style="margin-top:0;">Order Summary</h3>
+
+    <p>
+      <strong>Order Status:</strong>
+      {% if order.order_status == 'COMPLETED' %}
+        <span class="badge badge-success">{{ order.order_status }}</span>
+      {% elif order.order_status == 'CANCELLED' %}
+        <span class="badge badge-danger">{{ order.order_status }}</span>
+      {% else %}
+        <span class="badge badge-warning">{{ order.order_status }}</span>
+      {% endif %}
+    </p>
+
+    <p>
+      <strong>Payment Status:</strong>
+      {% if order.payment_status == 'PAID' %}
+        <span class="badge badge-success">{{ order.payment_status }}</span>
+      {% elif order.payment_status == 'PARTIAL' %}
+        <span class="badge badge-warning">{{ order.payment_status }}</span>
+      {% else %}
+        <span class="badge badge-neutral">{{ order.payment_status }}</span>
+      {% endif %}
+    </p>
+
+    <p><strong>Fulfillment Method:</strong> {{ order.fulfillment_method }}</p>
+    <p><strong>Fulfillment Status:</strong> {{ order.fulfillment_status }}</p>
+
+    {% if order.shipping_address %}
+      <p><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+    {% endif %}
+
+    {% if order.pickup_location %}
+      <p><strong>Pickup Location:</strong> {{ order.pickup_location }}</p>
+    {% endif %}
+
+    <hr style="border:none; border-top:1px solid #e5e7eb; margin:16px 0;">
+
+    <!-- CALCULO DESCUENTOS -->
+    {% set total_original = 0 %}
+    {% set total_final = 0 %}
+
+    {% for item in order.items %}
+      {% set total_original = total_original + ((item.unit_price + (item.discount_amount or 0)) * item.quantity) %}
+      {% set total_final = total_final + (item.unit_price * item.quantity) %}
+    {% endfor %}
+
+    {% set total_discount = total_original - total_final %}
+
+    {% if total_discount > 0 %}
+      <p><strong>Subtotal original:</strong> ₡{{ total_original }}</p>
+      <p><strong>Descuento:</strong> -₡{{ total_discount }}</p>
+    {% endif %}
+
+    <p><strong>Total:</strong> ₡{{ order.subtotal }}</p>
+    <p><strong>Pagado:</strong> ₡{{ order.total_paid }}</p>
+    <p><strong>Saldo pendiente:</strong> ₡{{ order.balance_due }}</p>
+
+  </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="card">
+  <div class="actions">
+    <a class="btn btn-secondary" href="{{ url_for('order_edit', order_id=order.id) }}">Edit Order</a>
+    <a class="btn btn-secondary" href="{{ url_for('order_pdf', order_id=order.id) }}">Download PDF</a>
+
+    {% if order.order_status != 'COMPLETED' and order.order_status != 'CANCELLED' %}
+      <form method="POST" action="{{ url_for('order_mark_completed', order_id=order.id) }}" style="display:inline;">
+        <button class="btn" type="submit">Mark Completed</button>
+      </form>
+    {% endif %}
+
+    {% if order.order_status != 'CANCELLED' %}
+      <form method="POST" action="{{ url_for('order_cancel', order_id=order.id) }}" style="display:inline;">
+        <button class="btn btn-warning" type="submit">Cancel Order</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ITEMS -->
+<div class="card">
+  <h3 style="margin-top:0;">Items</h3>
+
+  <div style="display:grid; gap:18px;">
+    {% for item in order.items %}
+      <div style="display:grid; grid-template-columns:120px 1fr; gap:18px; border:1px solid #e5e7eb; border-radius:16px; padding:16px;">
+
+        <div>
+          {% if item.variant.product.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/products/' + item.variant.product.image_filename) }}"
+                 style="width:120px; height:120px; object-fit:cover; border-radius:12px;">
+          {% else %}
+            <div style="width:120px; height:120px; background:#eee; border-radius:12px;"></div>
+          {% endif %}
+        </div>
+
+        <div>
+          <div style="font-weight:700; font-size:18px;">{{ item.variant.product.name }}</div>
+
+          <p><strong>Size:</strong> {{ item.variant.size }}</p>
+          <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+
+          {% if item.discount_amount and item.discount_amount > 0 %}
+            <p><strong>Original:</strong> ₡{{ item.unit_price + item.discount_amount }}</p>
+            <p><strong>Descuento:</strong> -₡{{ item.discount_amount }}</p>
+          {% endif %}
+
+          <p><strong>Precio final:</strong> ₡{{ item.unit_price }}</p>
+
+          <p>
+            <strong>Status:</strong>
+            {% if item.item_status == 'DELIVERED' %}
+              <span class="badge badge-success">{{ item.item_status }}</span>
+            {% elif item.item_status == 'CANCELLED' %}
+              <span class="badge badge-danger">{{ item.item_status }}</span>
+            {% else %}
+              <span class="badge badge-warning">{{ item.item_status }}</span>
+            {% endif %}
+          </p>
+        </div>
+
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- PAYMENTS -->
+{% if order.order_status != 'CANCELLED' and order.payment_status != 'PAID' %}
+<div class="card">
+  <h3>Register Payment</h3>
+
+  <form method="POST" action="{{ url_for('order_add_payment', order_id=order.id) }}">
+    <input type="number" step="0.01" name="amount" required>
+
+    <select name="payment_method">
+      <option value="CASH">CASH</option>
+      <option value="SINPE">SINPE</option>
+      <option value="TRANSFER">TRANSFER</option>
+    </select>
+
+    <button class="btn" type="submit">Add Payment</button>
+  </form>
+</div>
+{% endif %}
+
+{% endblock %}

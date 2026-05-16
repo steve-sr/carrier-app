@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Edit Order #{{ order.id }}</h1>
+    <div class="page-subtitle">Update customer, size, and delivery information.</div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Customer</label>
+        <select name="customer_id" required>
+          {% for customer in customers %}
+            <option value="{{ customer.id }}" {% if customer.id == order.customer_id %}selected{% endif %}>
+              {{ customer.full_name }} - {{ customer.phone }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Product / Size</label>
+        <select name="variant_id" required>
+          {% for variant in variants %}
+            <option value="{{ variant.id }}" {% if variant.id == current_item.product_variant_id %}selected{% endif %}>
+              {{ variant.product.name }} / {{ variant.size }} / Available: {{ variant.stock_quantity }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Fulfillment Method</label>
+        <select name="fulfillment_method" required>
+          <option value="PICKUP" {% if order.fulfillment_method == 'PICKUP' %}selected{% endif %}>PICKUP</option>
+          <option value="SHIPPING" {% if order.fulfillment_method == 'SHIPPING' %}selected{% endif %}>SHIPPING</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Pickup Location</label>
+        <input type="text" name="pickup_location" value="{{ order.pickup_location or '' }}">
+      </div>
+
+      <div class="form-group full">
+        <label>Shipping Address</label>
+        <textarea name="shipping_address">{{ order.shipping_address or '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Save Changes</button>
+      <a class="btn btn-secondary" href="{{ url_for('order_detail', order_id=order.id) }}">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

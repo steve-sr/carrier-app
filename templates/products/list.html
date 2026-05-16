@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Products</h1>
+    <div class="page-subtitle">Manage products, prices, stock, and images.</div>
+  </div>
+  <a class="btn" href="{{ url_for('product_create') }}">Add Product</a>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Total Stock</th>
+        <th>Available</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>
+          {% if product.image_filename %}
+            <img
+              src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+              style="width:60px; height:60px; object-fit:cover; border-radius:12px;"
+            >
+          {% else %}
+            <div style="width:60px; height:60px; background:#f3f4f6; border-radius:12px;"></div>
+          {% endif %}
+        </td>
+
+        <td><strong>{{ product.name }}</strong></td>
+        <td>₡{{ product.base_price }}</td>
+
+        
+        <td>{{ product.total_stock }}</td>
+        <td>
+          {% if product.available_stock == 0 %}
+            <span class="badge badge-danger">0</span>
+          {% elif product.available_stock <= 3 %}
+            <span class="badge badge-warning">{{ product.available_stock }}</span>
+          {% else %}
+            <span class="badge badge-success">{{ product.available_stock }}</span>
+          {% endif %}
+        </td>
+
+        <td>
+          <div class="actions">
+            <a class="btn btn-secondary" href="{{ url_for('product_edit', product_id=product.id) }}">Edit</a>
+            <form action="{{ url_for('product_delete', product_id=product.id) }}" method="POST" style="display:inline;">
+              <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="muted">No products added yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
