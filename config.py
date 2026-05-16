@@ -6,8 +6,10 @@ class Config:
     DATABASE_URL = os.environ.get("DATABASE_URL")
 
     if DATABASE_URL:
-        # SOLO esto, nada más
-        SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace("mysql://", "mysql+pymysql://")
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace(
+            "mysql://",
+            "mysql+pymysql://"
+        )
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"
 
