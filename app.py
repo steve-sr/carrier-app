@@ -58,6 +58,10 @@ def create_app():
     def logout():
         logout_user()
         return redirect(url_for("login"))
+    
+    @app.route("/test")
+    def test():
+        return "OK"
 
     # -------------------------
     # DASHBOARD
